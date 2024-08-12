@@ -4,22 +4,23 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import app.manohar.roomcrud.Models.Users
+import app.manohar.roomcrud.Models.Exercise
 
+@Database(entities = [Exercise::class], version = 1, exportSchema = false)
+abstract class ExerciseDatabase : RoomDatabase() {
 
-@Database(entities = [Users::class], version = 1)
-abstract class UserDatabase : RoomDatabase() {
-    abstract fun userDao(): UserDao
+    abstract fun exerciseDao(): ExerciseDao
 
     companion object {
-        private var INSTANCE: UserDatabase? = null
+        @Volatile
+        private var INSTANCE: ExerciseDatabase? = null
 
-        fun getDatabaseInstance(context: Context): UserDatabase {
+        fun getDatabase(context: Context): ExerciseDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    UserDatabase::class.java,
-                    "user_db"
+                    ExerciseDatabase::class.java,
+                    "exercise_database"
                 ).build()
                 INSTANCE = instance
                 instance

@@ -1,161 +1,152 @@
 package app.manohar.roomcrud
 
-import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.text.set
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import app.manohar.roomcrud.Adapters.UserListAdapter
-import app.manohar.roomcrud.Models.Users
-import app.manohar.roomcrud.Repository.UserRepo
-import app.manohar.roomcrud.RoomDatabase.UserDatabase
-import app.manohar.roomcrud.ViewModels.UserViewModel
+import app.manohar.roomcrud.Adapters.ExerciseListAdapter
+import app.manohar.roomcrud.Models.Exercise
+import app.manohar.roomcrud.Repository.ExerciseRepository
+import app.manohar.roomcrud.RoomDatabase.ExerciseDatabase
+import app.manohar.roomcrud.ViewModels.ExerciseViewModel
 import app.manohar.roomcrud.ViewModels.ViewModelFactory
 import app.manohar.roomcrud.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.lang.Exception
 
-class MainActivity : AppCompatActivity(), UserListAdapter.OnItemClickListener {
+class MainActivity : AppCompatActivity(), ExerciseListAdapter.OnItemClickListener {
 
-
-    private lateinit var viewModel: UserViewModel
-    private lateinit var adapter: UserListAdapter
-
+    private lateinit var viewModel: ExerciseViewModel
+    private lateinit var adapter: ExerciseListAdapter
     private lateinit var binding: ActivityMainBinding
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
 
-            binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        // Set up data binding
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-            val repository =
-                UserRepo(UserDatabase.getDatabaseInstance(applicationContext).userDao())
-            val viewModelFactory = ViewModelFactory(repository)
-            viewModel = ViewModelProvider(this, viewModelFactory)[UserViewModel::class.java]
+        // Initialize the database and repository
+        val repository = ExerciseRepository(ExerciseDatabase.getDatabase(this).exerciseDao())
+        val viewModelFactory = ViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, viewModelFactory)[ExerciseViewModel::class.java]
 
-            binding.submitBtn.setOnClickListener {
-
-                insertUser()
-                loadUsers()
-            }
-
-        } catch (e: Exception) {
-
+        // Set up the submit button click listener
+        binding.submitBtn.setOnClickListener {
+            insertExercise()
+            loadExercises()
         }
     }
 
     override fun onStart() {
         super.onStart()
-        loadUsers()
+        loadExercises()
     }
 
+    // Initialize RecyclerView
     private fun initRecyclerview() {
         binding.userRecycler.layoutManager = LinearLayoutManager(this@MainActivity)
     }
 
-    private fun loadUsers() {
+    // Load exercises from the database
+    private fun loadExercises() {
         CoroutineScope(Dispatchers.IO).launch {
-            val users = viewModel.getAllUsers()
-
-            Log.e("Users", ":$users");
+            val exercises = viewModel.getAllExercises()
+            Log.e("Exercises", exercises.toString())
 
             lifecycleScope.launch(Dispatchers.Main) {
-
                 initRecyclerview()
-                adapter = UserListAdapter(users,this@MainActivity)
+                adapter = ExerciseListAdapter(exercises, this@MainActivity)
                 binding.userRecycler.adapter = adapter
             }
         }
     }
 
-    private fun insertUser() {
-        val name = binding.usernameEt.text.toString()
-        val age = binding.ageEt.text.toString()
+    // Insert a new exercise into the database
+    private fun insertExercise() {
+        val studentNumber = binding.studentNumberEt.text.toString()
+        val exerciseCode = binding.exerciseCodeEt.text.toString()
+        val resultObtained = binding.resultObtainedEt.text.toString()
+        val marks = binding.marksEt.text.toString().toInt()
 
+        val exercise = Exercise(
+            studentNumber = studentNumber,
+            exerciseCode = exerciseCode,
+            resultObtained = resultObtained,
+            marks = marks
+        )
 
-        Log.e("name", ":$name");
-        Log.e("age", ":$age");
+        viewModel.insertExercise(exercise)
 
-        val user = Users(name = name, age = age.toInt())
-
-        viewModel.insertUser(user)
-
-        binding.usernameEt.text.clear()
-        binding.ageEt.text.clear()
-        binding.usernameEt.requestFocus()
+        // Clear input fields
+        binding.studentNumberEt.text.clear()
+        binding.exerciseCodeEt.text.clear()
+        binding.resultObtainedEt.text.clear()
+        binding.marksEt.text.clear()
+        binding.studentNumberEt.requestFocus()
     }
 
-
-
-    override fun onItemClick(user: Users) {
-        // Handle item click here
-
-        //Toast.makeText(this, "Clicked on ${user.id}", Toast.LENGTH_SHORT).show()
-
-        showUserDialog(user)
-
-
+    // Handle item click events
+    override fun onItemClick(exercise: Exercise) {
+        showExerciseDialog(exercise)
     }
 
-
-    private fun showUserDialog(user: Users) {
+    // Display a dialog for updating or deleting an exercise
+    private fun showExerciseDialog(exercise: Exercise) {
         val dialogView = layoutInflater.inflate(R.layout.alert_dialog, null)
 
-
-        val nameEditText = dialogView.findViewById<EditText>(R.id.name_et)
-        val ageEditText = dialogView.findViewById<EditText>(R.id.age_et)
+        val studentNumberEditText = dialogView.findViewById<EditText>(R.id.name_et)
+        val exerciseCodeEditText = dialogView.findViewById<EditText>(R.id.age_et)
+        val resultObtainedEditText = dialogView.findViewById<EditText>(R.id.resultObtainedEt)
+        val marksEditText = dialogView.findViewById<EditText>(R.id.marksEt)
 
         val dialogBuilder = AlertDialog.Builder(this)
             .setView(dialogView)
-            .setTitle("User Details")
+            .setTitle("Exercise Details")
 
         val alertDialog = dialogBuilder.create()
 
-
-
-        nameEditText.setText(user.name)
-        ageEditText.setText(user.age.toString())
+        studentNumberEditText.setText(exercise.studentNumber)
+        exerciseCodeEditText.setText(exercise.exerciseCode)
+        resultObtainedEditText.setText(exercise.resultObtained)
+        marksEditText.setText(exercise.marks.toString())
 
         dialogView.findViewById<Button>(R.id.cancel_btn).setOnClickListener {
             alertDialog.dismiss()
         }
 
         dialogView.findViewById<Button>(R.id.delete_btn).setOnClickListener {
-
-
-            viewModel.deleteUser(user)
-            loadUsers()
-
-
+            viewModel.deleteExercise(exercise)
+            loadExercises()
             alertDialog.dismiss()
         }
 
         dialogView.findViewById<Button>(R.id.update_btn).setOnClickListener {
-            val name = nameEditText.text.toString()
-            val age = ageEditText.text.toString()
-            // Process the values here as needed
+            val studentNumber = studentNumberEditText.text.toString()
+            val exerciseCode = exerciseCodeEditText.text.toString()
+            val resultObtained = resultObtainedEditText.text.toString()
+            val marks = marksEditText.text.toString().toInt()
 
-            val user = Users(id=user.id,name = name, age = age.toInt())
-            viewModel.updateUser(user)
-            loadUsers()
+            val updatedExercise = Exercise(
+                id = exercise.id,
+                studentNumber = studentNumber,
+                exerciseCode = exerciseCode,
+                resultObtained = resultObtained,
+                marks = marks
+            )
 
+            viewModel.updateExercise(updatedExercise)
+            loadExercises()
             alertDialog.dismiss()
         }
 
         alertDialog.show()
     }
-
-
 }
