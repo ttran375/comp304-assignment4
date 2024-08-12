@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">RoomCRUD</string>
+
+
+
+    <string name="user_age">Age</string>
+    <string name="user_name">Name</string>
+    <string name="add_user">Add User</string>
+
+
+</resources>
