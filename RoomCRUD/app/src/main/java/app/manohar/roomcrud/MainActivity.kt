@@ -1,7 +1,7 @@
 package app.manohar.roomcrud
 
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +30,15 @@ class MainActivity : AppCompatActivity(), ExerciseListAdapter.OnItemClickListene
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Check if the user is logged in
+        if (!isAuthenticated()) {
+            // If not authenticated, redirect to LoginActivity
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+
         // Set up data binding
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
@@ -50,6 +59,12 @@ class MainActivity : AppCompatActivity(), ExerciseListAdapter.OnItemClickListene
         loadExercises()
     }
 
+    private fun isAuthenticated(): Boolean {
+        // In this simple implementation, we assume that if MainActivity is reached, the user is authenticated.
+        // This can be expanded to check shared preferences, tokens, etc.
+        return true
+    }
+
     // Initialize RecyclerView
     private fun initRecyclerview() {
         binding.userRecycler.layoutManager = LinearLayoutManager(this@MainActivity)
@@ -59,8 +74,6 @@ class MainActivity : AppCompatActivity(), ExerciseListAdapter.OnItemClickListene
     private fun loadExercises() {
         CoroutineScope(Dispatchers.IO).launch {
             val exercises = viewModel.getAllExercises()
-            Log.e("Exercises", exercises.toString())
-
             lifecycleScope.launch(Dispatchers.Main) {
                 initRecyclerview()
                 adapter = ExerciseListAdapter(exercises, this@MainActivity)
